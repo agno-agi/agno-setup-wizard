@@ -71,9 +71,9 @@ Both options work; `dist/` is committed to the repo to support either.
   served from
   `https://cdn.jsdelivr.net/gh/<owner>/<repo>@<tag-or-commit>/dist/prompt-data.js`.
   Pin a tag/commit for stable caching; `@latest` follows the default branch.
-- **GitHub Pages:** enable Pages for the repo and serve from the `dist/` folder
-  (or root); the file is then at
-  `https://<owner>.github.io/<repo>/prompt-data.js`.
+- **GitHub Pages:** enable Pages for the repo.
+  - If you publish from the `dist/` folder, the file is at `https://<owner>.github.io/<repo>/prompt-data.js`.
+  - If you publish from the repo root, the file is at `https://<owner>.github.io/<repo>/dist/prompt-data.js`.
 
 > If you haven’t pushed this repo to GitHub yet, initialize a remote and push it,
 > then replace the `<owner>/<repo>` placeholders above in the V2 embed’s script
