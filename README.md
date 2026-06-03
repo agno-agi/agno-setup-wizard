@@ -75,8 +75,8 @@ Both options work; `dist/` is committed to the repo to support either.
   (or root); the file is then at
   `https://<owner>.github.io/<repo>/prompt-data.js`.
 
-> This repo is not yet a git repository / GitHub remote. Initialize and push,
-> then fill the `<owner>/<repo>` placeholders above into the V2 embed's script
+> If you haven’t pushed this repo to GitHub yet, initialize a remote and push it,
+> then replace the `<owner>/<repo>` placeholders above in the V2 embed’s script
 > `src`.
 
 ## Files
