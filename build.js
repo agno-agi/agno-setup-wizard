@@ -88,27 +88,14 @@ const generatedAt = new Date().toISOString();
 
 /* ----------------------------------------------------------------------------
  * 4. Emit dist/mvp-prompt.txt
- * Header documents the sync rule; a clear delimiter marks the paste region.
+ * RAW prompt only — no header, no comments, no fences. The Webflow copy button
+ * fetches this file and the end user copies its contents verbatim into their AI
+ * assistant, so the body must contain nothing but the prompt itself. The sync
+ * rule / regenerate-and-tag workflow is documented in the README, not here.
  * ------------------------------------------------------------------------- */
 fs.mkdirSync(DIST, { recursive: true });
 
-const HR = "=".repeat(80);
-const mvp =
-  HR +
-  "\n AGNO SETUP WIZARD — MVP PROMPT (paste source for the Webflow copy button)\n" +
-  HR +
-  "\n GENERATED FILE — do not hand-edit." +
-  "\n Source of truth: agno-setup-wizard-prompt.md" +
-  "\n Regenerate:      npm run build   (node build.js)" +
-  "\n Sync rule:       repo -> Webflow ONLY. When the canonical .md changes, rerun" +
-  "\n                  the build and re-paste everything BELOW the line into the" +
-  "\n                  Webflow copy element. Never edit Webflow or this file by hand." +
-  "\n Generated:       " + generatedAt +
-  "\n Content hash:    " + hash +
-  "\n" + "-".repeat(27) + " PASTE EVERYTHING BELOW " + "-".repeat(29) + "\n\n" +
-  body;
-
-fs.writeFileSync(path.join(DIST, "mvp-prompt.txt"), mvp);
+fs.writeFileSync(path.join(DIST, "mvp-prompt.txt"), body);
 
 /* ----------------------------------------------------------------------------
  * 5. Emit dist/prompt-data.js
@@ -170,5 +157,5 @@ fs.writeFileSync(path.join(DIST, "prompt-data.js"), js);
 console.log("build.js: wrote dist/ from agno-setup-wizard-prompt.md");
 console.log("  content hash : " + hash);
 console.log("  paths        : " + paths.map((p) => p.letter + "=" + p.id).join(", "));
-console.log("  dist/mvp-prompt.txt  (" + mvp.length + " bytes)");
+console.log("  dist/mvp-prompt.txt  (" + body.length + " bytes, raw prompt)");
 console.log("  dist/prompt-data.js  (" + js.length + " bytes)");

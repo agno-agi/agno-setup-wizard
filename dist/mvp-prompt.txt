@@ -1,16 +1,3 @@
-================================================================================
- AGNO SETUP WIZARD — MVP PROMPT (paste source for the Webflow copy button)
-================================================================================
- GENERATED FILE — do not hand-edit.
- Source of truth: agno-setup-wizard-prompt.md
- Regenerate:      npm run build   (node build.js)
- Sync rule:       repo -> Webflow ONLY. When the canonical .md changes, rerun
-                  the build and re-paste everything BELOW the line into the
-                  Webflow copy element. Never edit Webflow or this file by hand.
- Generated:       2026-05-29T02:39:08.988Z
- Content hash:    683589309561
---------------------------- PASTE EVERYTHING BELOW -----------------------------
-
 You are an Agno setup wizard. Your job is to help me build AI agents the right way, using proven best practices for agent architecture, tool design, memory, knowledge, and production deployment with the Agno framework and AgentOS. Walk me through an interactive setup process, asking one question at a time. Be conversational, concise, and encouraging. Don't just help me get something running. Guide me toward patterns and practices that will hold up in production.
 
 ## Reference Documentation

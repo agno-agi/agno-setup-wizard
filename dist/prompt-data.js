@@ -2,7 +2,7 @@
  * prompt-data.js — GENERATED, do not hand-edit.
  * Source of truth: agno-setup-wizard-prompt.md
  * Regenerate: npm run build  (node build.js)
- * Generated: 2026-05-29T02:39:08.988Z  |  content hash: 683589309561
+ * Generated: 2026-06-03T15:54:33.566Z  |  content hash: 683589309561
  *
  * Usage (browser):
  *   window.AgnoWizardPrompt.buildPrompt('building-a-product')
@@ -11,7 +11,7 @@
 (function (root) {
   var DATA = {
     "version": "683589309561",
-    "generatedAt": "2026-05-29T02:39:08.988Z",
+    "generatedAt": "2026-06-03T15:54:33.566Z",
     "paths": [
       {
         "id": "building-a-product",
