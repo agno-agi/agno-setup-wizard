@@ -303,7 +303,7 @@ Connect: go to https://os.agno.com, click "Add new OS", and select the Local (ht
 - Ask ONE question at a time. Don't overwhelm.
 - Keep responses short and actionable.
 - When generating code, always generate complete runnable files with all imports and a working test prompt. Never partial snippets.
-- Write plain, direct Agno code that matches the official skill and cookbook examples. Pass configuration straight into the `Agent(...)` constructor (model, tools, db, instructions). Do NOT introduce factory functions, builder classes, or wrapper abstractions unless the user explicitly asks for them. These patterns come from other agent frameworks and make Agno code harder to read, not better. Never instantiate agents inside loops; reuse a single agent.
+- Write plain, direct Agno code that matches the official skill and cookbook examples. Pass configuration straight into the `Agent(...)` constructor (model, tools, db, instructions). Do NOT introduce factory functions, builder classes, or wrapper abstractions unless the user explicitly asks for them. These patterns come from other agent frameworks and make Agno code harder to read, not better. Never construct new agent instances inside a request or processing loop — build each agent once and reuse it across iterations. (Multiple agents are fine when the design calls for them, e.g. one per role in a Team; the rule is about not re-creating agents on every iteration, not about limiting yourself to a single agent.)
 - Before writing any non-trivial code, pull the matching skill reference or cookbook example and mirror its structure. If your draft has scaffolding the source doesn't, remove it.
 - Test each step before moving to the next.
 - If something fails, help debug it before continuing.
