@@ -63,7 +63,7 @@ URLs (repo is `agno-agi/agno-setup-wizard`):
 
 ```
 # Pinned to a release tag — PREFERRED (deterministic, no stale-cache surprises)
-https://cdn.jsdelivr.net/gh/agno-agi/agno-setup-wizard@v1.0.0/dist/mvp-prompt.txt
+https://cdn.jsdelivr.net/gh/agno-agi/agno-setup-wizard@v1.0.1/dist/mvp-prompt.txt
 
 # Latest on the default branch — convenient, but CDN-cached up to ~7 days
 https://cdn.jsdelivr.net/gh/agno-agi/agno-setup-wizard@main/dist/mvp-prompt.txt
@@ -78,8 +78,8 @@ instantly live at a new URL.
 1. Edit `agno-setup-wizard-prompt.md` (the only file you hand-edit).
 2. `npm run build` to regenerate `dist/`.
 3. Commit the regenerated `dist/` (via PR — `main` is protection-ruled).
-4. Tag a new release, e.g. `v1.0.1` (GitHub → Releases → *Draft a new release*,
-   or `git tag v1.0.1 && git push origin v1.0.1`).
+4. Tag a new release, e.g. `v1.0.2` (GitHub → Releases → *Draft a new release*,
+   or `git tag v1.0.2 && git push origin v1.0.2`).
 5. Update the `@vX.Y.Z` in the Webflow button's fetch URL to the new tag.
 
 > **Sync direction is always repo → Webflow.** Never edit the prompt in Webflow
@@ -88,12 +88,12 @@ instantly live at a new URL.
 ## Webflow MVP copy button
 
 Drop this into a Webflow **Embed** element. It fetches the raw prompt from
-jsDelivr and copies it to the clipboard. Bump the `@v1.0.0` tag when you publish
+jsDelivr and copies it to the clipboard. Bump the `@v1.0.1` tag when you publish
 a new release.
 
 ```html
 <button id="agno-copy-prompt" data-agno-action="copy-prompt"
-        data-agno-src="https://cdn.jsdelivr.net/gh/agno-agi/agno-setup-wizard@v1.0.0/dist/mvp-prompt.txt">
+        data-agno-src="https://cdn.jsdelivr.net/gh/agno-agi/agno-setup-wizard@v1.0.1/dist/mvp-prompt.txt">
   Copy the Agno setup prompt
 </button>
 <script>
