@@ -1,4 +1,5 @@
-template-prompt
+# Template prompt (reference)
+
 
 # Railway 
 Help me set up my agent platform. Clone https://github.com/agno-agi/agentos-railway into a folder called agent-platform, cd in, read the README, and follow the get started guide.
