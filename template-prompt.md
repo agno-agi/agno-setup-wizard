@@ -6,8 +6,7 @@ Help me set up my agent platform. Clone https://github.com/agno-agi/agentos-rail
 # AWS
 Help me set up my agent platform. Clone https://github.com/agno-agi/agentos-aws into a folder called agent-platform, cd in, read the README, and follow the get started guide.
 
-# GCS
-Help me set up my agent platform. Clone https://github.com/agno-agi/agentos-gcp into a folder called agent-platform, cd in, read the README, and follow the get started guide.
+# GCP
 
 # Azure
 Help me set up my agent platform. Clone https://github.com/agno-agi/agentos-azure into a folder called agent-platform, cd in, read the README, and follow the get started guide.
