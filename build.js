@@ -5,9 +5,16 @@
  * Source of truth: agno-setup-wizard-prompt.md
  * Sync direction is ALWAYS repo -> everywhere. Never hand-edit dist/.
  *
+ * The canonical file has two zones (split on the "BUILD DATA" comment marker):
+ *   1. Preamble  — the shared teaching prompt, copied into every target's prompt.
+ *   2. Build data — the cloud target list, the per-cloud setup instruction
+ *      (with an AGENTOS_REPO placeholder), and the "start local" instruction.
+ *
+ * A per-target prompt = preamble + blank line + that target's instruction.
+ *
  * Emits:
- *   dist/mvp-prompt.txt  — clean copy-paste block for the Webflow MVP copy button
- *   dist/prompt-data.js  — base prompt + per-path assembly logic for the V2 embed
+ *   dist/mvp-prompt.txt  — raw "start local" prompt for the single MVP copy button
+ *   dist/prompt-data.js  — preamble + per-target tails + buildPrompt() for the V2 selector
  *
  * Run: node build.js   (or: npm run build)  — zero dependencies, pure Node.
  */
@@ -19,6 +26,8 @@ const crypto = require("crypto");
 const ROOT = __dirname;
 const SOURCE = path.join(ROOT, "agno-setup-wizard-prompt.md");
 const DIST = path.join(ROOT, "dist");
+const REPO_BASE = "https://github.com/agno-agi/";
+const START_LOCAL_ID = "start-local";
 
 function fail(msg) {
   console.error("build.js: " + msg);
@@ -26,87 +35,84 @@ function fail(msg) {
 }
 
 if (!fs.existsSync(SOURCE)) fail("canonical source not found: " + SOURCE);
-
 const raw = fs.readFileSync(SOURCE, "utf8");
 
-/* ----------------------------------------------------------------------------
- * 1. Extract the prompt body.
- * The canonical file opens with a short editorial intro, then a horizontal rule
- * (`---`) on its own line, then the actual prompt. We take everything after the
- * FIRST such rule. The body itself contains `---` separators between paths, so
- * we must only split on the first one.
- * ------------------------------------------------------------------------- */
+/* 1. Body = everything after the first horizontal rule. ------------------- */
 const lines = raw.split(/\r?\n/);
 const firstRule = lines.findIndex((l) => l.trim() === "---");
 if (firstRule === -1) fail("could not find the opening '---' rule in the source");
+const body = lines.slice(firstRule + 1).join("\n");
 
-const body = lines.slice(firstRule + 1).join("\n").trim() + "\n";
+/* 2. Split preamble (copied) from build data (consumed, not copied). ------ */
+const dataMarker = body.search(/^<!--\s*=+/m);
+if (dataMarker === -1) fail("could not find the '<!-- ===' BUILD DATA marker");
+const preamble = body.slice(0, dataMarker).trim() + "\n";
+const dataZone = body.slice(dataMarker);
 
-/* ----------------------------------------------------------------------------
- * 2. Parse the Step 1 path list so per-path metadata stays single-sourced.
- * Each option looks like:
- *   - 🚀 **Building a product** — I'm building an agent-powered product or feature
- * ------------------------------------------------------------------------- */
+/* 3. Parse the build-data section. ---------------------------------------- */
+function sectionBody(text, heading) {
+  const idx = text.indexOf(heading);
+  if (idx === -1) fail("missing build-data section: " + heading);
+  const after = text.slice(idx + heading.length);
+  const stop = after.search(/\n(#{2,3}\s|<!--)/);
+  return (stop === -1 ? after : after.slice(0, stop)).trim();
+}
+
 function slugify(s) {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-function parsePaths(text) {
-  const step1 = text.indexOf("## Step 1");
-  if (step1 === -1) fail("could not find '## Step 1' to parse the path list");
-  const after = text.slice(step1);
-  // Stop at the next heading so we only read Step 1's bullets.
-  const block = after.split(/\n##\s/)[0];
-  const re = /^-\s+(\S+)\s+\*\*(.+?)\*\*\s*[—–-]\s*(.+?)\s*$/gmu;
-  const paths = [];
-  let m;
-  let i = 0;
-  while ((m = re.exec(block)) !== null) {
-    paths.push({
-      id: slugify(m[2]),
-      emoji: m[1],
-      label: m[2],
-      description: m[3],
-      letter: String.fromCharCode(65 + i), // A, B, C, D
-    });
-    i++;
-  }
-  if (paths.length === 0) fail("parsed zero paths from Step 1 — check the bullet format");
-  return paths;
+// Cloud target list: "- **Label**: agentos-repo"
+const cloudBlock = sectionBody(dataZone, "### Cloud targets");
+const cloudRe = /^-\s+\*\*(.+?)\*\*:\s*(\S+)\s*$/gm;
+const clouds = [];
+let m;
+while ((m = cloudRe.exec(cloudBlock)) !== null) {
+  clouds.push({ id: slugify(m[1]), label: m[1], repo: m[2] });
+}
+if (clouds.length === 0) fail("parsed zero cloud targets — check the '- **Label**: repo' format");
+
+const cloudInstruction = sectionBody(dataZone, "### Cloud setup instruction");
+if (!/AGENTOS_REPO/.test(cloudInstruction)) fail("cloud setup instruction is missing the AGENTOS_REPO placeholder");
+const localInstruction = sectionBody(dataZone, "### Start local (not sure yet)");
+
+/* 4. Assemble per-target tails, then full prompts. ------------------------ */
+const targets = clouds.map((c) => ({
+  id: c.id,
+  label: c.label,
+  repo: c.repo,
+  cloud: true,
+  tail: cloudInstruction.replace(/AGENTOS_REPO/g, c.repo),
+}));
+targets.push({
+  id: START_LOCAL_ID,
+  label: "Not sure yet",
+  repo: null,
+  cloud: false,
+  tail: localInstruction,
+});
+
+function assemble(tail) {
+  return preamble + "\n" + tail + "\n";
 }
 
-const paths = parsePaths(body);
-
-/* ----------------------------------------------------------------------------
- * 3. Version stamp: content hash so downstream artifacts are traceable.
- * ------------------------------------------------------------------------- */
+/* 5. Version stamp. ------------------------------------------------------- */
 const hash = crypto.createHash("sha256").update(body).digest("hex").slice(0, 12);
 const generatedAt = new Date().toISOString();
 
-/* ----------------------------------------------------------------------------
- * 4. Emit dist/mvp-prompt.txt
- * RAW prompt only — no header, no comments, no fences. The Webflow copy button
- * fetches this file and the end user copies its contents verbatim into their AI
- * assistant, so the body must contain nothing but the prompt itself. The sync
- * rule / regenerate-and-tag workflow is documented in the README, not here.
- * ------------------------------------------------------------------------- */
+/* 6. Emit dist/mvp-prompt.txt — the raw "start local" prompt (no header). -- */
 fs.mkdirSync(DIST, { recursive: true });
+const mvpPrompt = assemble(targets.find((t) => t.id === START_LOCAL_ID).tail);
+fs.writeFileSync(path.join(DIST, "mvp-prompt.txt"), mvpPrompt);
 
-fs.writeFileSync(path.join(DIST, "mvp-prompt.txt"), body);
-
-/* ----------------------------------------------------------------------------
- * 5. Emit dist/prompt-data.js
- * Browser-loadable (window.AgnoWizardPrompt) and CommonJS-loadable. Carries the
- * base prompt + path metadata + buildPrompt(pathId) assembly for the V2 embed.
- * ------------------------------------------------------------------------- */
+/* 7. Emit dist/prompt-data.js — preamble + per-target tails + buildPrompt. */
 const data = {
   version: hash,
   generatedAt: generatedAt,
-  paths: paths,
-  basePrompt: body,
+  repoBase: REPO_BASE,
+  startLocalId: START_LOCAL_ID,
+  preamble: preamble,
+  targets: targets,
 };
 
 const js =
@@ -117,34 +123,34 @@ const js =
   " * Generated: " + generatedAt + "  |  content hash: " + hash + "\n" +
   " *\n" +
   " * Usage (browser):\n" +
-  " *   window.AgnoWizardPrompt.buildPrompt('" + paths[0].id + "')\n" +
-  " *   window.AgnoWizardPrompt.paths  // [{id, emoji, label, description, letter}]\n" +
+  " *   window.AgnoWizardPrompt.targets                 // [{id,label,repo,cloud,tail}]\n" +
+  " *   window.AgnoWizardPrompt.buildPrompt('railway')  // full prompt for a target\n" +
+  " *   window.AgnoWizardPrompt.buildPrompt()           // -> 'start-local' default\n" +
   " */\n" +
   "(function (root) {\n" +
   "  var DATA = " + JSON.stringify(data, null, 2).replace(/\n/g, "\n  ") + ";\n\n" +
-  "  // Per-path assembly: returns the full prompt pre-routed to the chosen path.\n" +
-  "  // Passing no/unknown pathId returns the unmodified base prompt (with Step 1).\n" +
-  "  function buildPrompt(pathId) {\n" +
-  "    var base = DATA.basePrompt;\n" +
-  "    if (!pathId) return base;\n" +
-  "    var path = null;\n" +
-  "    for (var i = 0; i < DATA.paths.length; i++) {\n" +
-  "      if (DATA.paths[i].id === pathId) { path = DATA.paths[i]; break; }\n" +
+  "  // A target's full prompt = shared preamble + that target's instruction.\n" +
+  "  // Unknown/empty id falls back to the 'start local' default.\n" +
+  "  function buildPrompt(targetId) {\n" +
+  "    var id = targetId || DATA.startLocalId;\n" +
+  "    var target = null;\n" +
+  "    for (var i = 0; i < DATA.targets.length; i++) {\n" +
+  "      if (DATA.targets[i].id === id) { target = DATA.targets[i]; break; }\n" +
   "    }\n" +
-  "    if (!path) return base;\n" +
-  "    var preface =\n" +
-  "      'The user has already selected their path: ' + path.label +\n" +
-  "      ' (Path ' + path.letter + '). Skip Step 1 (Route by Intent) entirely — do not ' +\n" +
-  "      'ask them to pick an option. Acknowledge their choice in one line, then begin at ' +\n" +
-  "      'Step 2 (Calibrate Readiness) for Path ' + path.letter + ' and follow that path ' +\n" +
-  "      'for the rest of the session.\\n\\n';\n" +
-  "    return preface + base;\n" +
+  "    if (!target) {\n" +
+  "      for (var j = 0; j < DATA.targets.length; j++) {\n" +
+  "        if (DATA.targets[j].id === DATA.startLocalId) { target = DATA.targets[j]; break; }\n" +
+  "      }\n" +
+  "    }\n" +
+  "    return DATA.preamble + '\\n' + target.tail + '\\n';\n" +
   "  }\n\n" +
   "  var API = {\n" +
   "    version: DATA.version,\n" +
   "    generatedAt: DATA.generatedAt,\n" +
-  "    paths: DATA.paths,\n" +
-  "    basePrompt: DATA.basePrompt,\n" +
+  "    repoBase: DATA.repoBase,\n" +
+  "    startLocalId: DATA.startLocalId,\n" +
+  "    preamble: DATA.preamble,\n" +
+  "    targets: DATA.targets,\n" +
   "    buildPrompt: buildPrompt\n" +
   "  };\n" +
   "  if (typeof module !== 'undefined' && module.exports) { module.exports = API; }\n" +
@@ -156,6 +162,6 @@ fs.writeFileSync(path.join(DIST, "prompt-data.js"), js);
 /* ------------------------------------------------------------------------- */
 console.log("build.js: wrote dist/ from agno-setup-wizard-prompt.md");
 console.log("  content hash : " + hash);
-console.log("  paths        : " + paths.map((p) => p.letter + "=" + p.id).join(", "));
-console.log("  dist/mvp-prompt.txt  (" + body.length + " bytes, raw prompt)");
+console.log("  targets      : " + targets.map((t) => t.id).join(", "));
+console.log("  dist/mvp-prompt.txt  (" + mvpPrompt.length + " bytes, raw 'start local' prompt)");
 console.log("  dist/prompt-data.js  (" + js.length + " bytes)");
